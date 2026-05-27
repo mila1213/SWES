@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { auth } from '../../firebase';
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { googleSignIn } from '../services/authService';
+import { loginUser } from '../services/authService';
 import logoSwes from '../assets/icono_sistema.png';
 
 const Login = () => {
@@ -13,69 +10,30 @@ const Login = () => {
   
   const handleLogin = async (e) => {
     e.preventDefault();
-    setMensaje({ texto: '', tipo: '' }); 
+    setMensaje({ texto: '', tipo: '' });
     const { email, password } = Object.fromEntries(new FormData(e.target));
 
     if (!email.toLowerCase().endsWith('@epn.edu.ec')) {
-      setMensaje({ texto: 'Solo se permiten correos institucionales @epn.edu.ec. Si eres visitante, usa "Ingresar con Google".', tipo: 'error' });
+      setMensaje({ texto: 'Solo se permiten correos institucionales @epn.edu.ec.', tipo: 'error' });
       return;
     }
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      const res = await fetch('http://localhost:8000/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        if (data.uid) {
-          localStorage.setItem('uid', data.uid);
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('role', data.role || 'visitante');
-          if (data.phone) localStorage.setItem('phone', data.phone);
-          localStorage.setItem('email', data.email);
-          localStorage.setItem('name', data.name || '');
-          setMensaje({ texto: '¡Bienvenido!', tipo: 'success' });
-          setTimeout(() => navigate('/dashboard'), 800); 
-        } else {
-          setMensaje({ texto: 'Error: El servidor no envió el ID de usuario.', tipo: 'error' });
-        }
-      } else {
-        setMensaje({ texto: data.mensaje || 'Credenciales incorrectas', tipo: 'error' });
-      }
+      const data = await loginUser(email, password);
+      localStorage.setItem('uid', data.uid);
+      localStorage.setItem('token', data.token || '');
+      localStorage.setItem('role', data.role || 'visitante');
+      if (data.phone) localStorage.setItem('phone', data.phone);
+      localStorage.setItem('email', data.email || email);
+      localStorage.setItem('name', data.name || '');
+      setMensaje({ texto: '¡Bienvenido!', tipo: 'success' });
+      setTimeout(() => navigate('/dashboard'), 800);
     } catch (error) {
-      console.error("Error en el login:", error);
+      console.error('Error en el login:', error);
       setMensaje({ texto: 'Correo o contraseña incorrectos', tipo: 'error' });
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setMensaje({ texto: '', tipo: '' });
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const email = result.user.email?.toLowerCase();
-      const idToken = await result.user.getIdToken();
-      const res = await googleSignIn(idToken);
-
-      if (res) {
-        localStorage.setItem('uid', result.user.uid);
-        localStorage.setItem('email', email);
-        localStorage.setItem('name', result.user.displayName || '');
-        localStorage.setItem('role', 'visitante');
-        navigate('/dashboard');
-      } else {
-        setMensaje({ texto: 'No se pudo iniciar sesión con Google', tipo: 'error' });
-      }
-    } catch (err) {
-      console.error(err);
-      setMensaje({ texto: 'Error con Google Sign-In', tipo: 'error' });
-    }
-  };
 
   return (
     <div className="h-screen w-full flex overflow-hidden">
@@ -204,23 +162,6 @@ const Login = () => {
           <button type="submit"
             className="w-full bg-brand-primary hover:bg-brand-hover text-white font-semibold py-3 rounded-btn text-sm transition-all flex items-center justify-center gap-2">
             Ingresar al Sistema →
-          </button>
-
-          <div className="flex items-center gap-3 my-1">
-            <div className="flex-1 h-px bg-neutral-border"></div>
-            <span className="text-xs text-neutral-muted">o</span>
-            <div className="flex-1 h-px bg-neutral-border"></div>
-          </div>
-
-          <button type="button" onClick={handleGoogleLogin}
-            className="w-full border border-neutral-border bg-white hover:bg-gray-50 py-3 rounded-btn font-medium flex items-center justify-center gap-3 transition text-sm text-neutral-text">
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="#EA4335" d="M12 5.04c1.64 0 3.12.56 4.28 1.67l3.2-3.2C17.52 1.58 14.94 1 12 1 7.35 1 3.37 3.67 1.39 7.56l3.77 2.93c.9-2.69 3.42-4.45 6.84-4.45z"/>
-              <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.34H12v4.43h6.44c-.28 1.47-1.11 2.71-2.36 3.55l3.67 2.84c2.15-1.98 3.38-4.89 3.38-8.48z"/>
-              <path fill="#FBBC05" d="M5.16 14.51c-.23-.69-.36-1.43-.36-2.2s.13-1.51.36-2.2L1.39 7.56C.5 9.35 0 11.33 0 12.4c0 1.07.5 3.05 1.39 4.84l3.77-2.73z"/>
-              <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.67-2.84c-1.1.74-2.51 1.18-4.29 1.18-3.42 0-5.94-1.76-6.84-4.45L1.39 16.91C3.37 20.33 7.35 23 12 23z"/>
-            </svg>
-            Ingresar con Google
           </button>
 
           <p className="text-center text-sm text-neutral-muted">

@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { auth } from '../../firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { googleSignIn } from '../services/authService';
+import { registerUser, googleSignIn } from '../services/authService';
 import logoSwes from '../assets/icono_sistema.png';
 
 const Register = () => {
@@ -51,34 +49,24 @@ const Register = () => {
     }
 
     try {
-      const res = await fetch('http://localhost:8000/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nombre: data.nombre,
-          email: normalizedEmail,
-          password: data.password,
-          role: role,
-          phone: data.phone || '',
-        }),
+      await registerUser({
+        nombre: data.nombre,
+        email: normalizedEmail,
+        password: data.password,
+        role,
+        phone: data.phone || '',
       });
 
-      const result = await res.json();
-
-      if (res.ok) {
-        setMensaje({ texto: result.message || '¡Registro exitoso!', tipo: 'success' });
-        setTimeout(() => {
-          navigate('/login');
-        }, 1500);
-      } else {
-        const errorText = result.message || 'El correo institucional o el celular ya se encuentran registrados.';
-        setMensaje({ texto: `Error: ${errorText}`, tipo: 'error' });
-      }
+      setMensaje({ texto: '¡Registro exitoso! Ahora inicia sesión.', tipo: 'success' });
+      setTimeout(() => {
+        navigate('/login');
+      }, 1500);
     } catch (error) {
       console.error(error);
-      setMensaje({ texto: 'Error: Error de conexión con el servidor.', tipo: 'error' });
+      setMensaje({
+        texto: error.message || 'Error: No se pudo completar el registro.',
+        tipo: 'error',
+      });
     }
   };
 
@@ -86,18 +74,15 @@ const Register = () => {
   const handleGoogle = async () => {
     try {
       setMensaje({ texto: '', tipo: '' });
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const email = result.user.email?.toLowerCase();
-      const idToken = await result.user.getIdToken();
-      const res = await googleSignIn(idToken);
+      const res = await googleSignIn();
 
       if (res) {
-        localStorage.setItem('uid', result.user.uid);
-        localStorage.setItem('email', email);
-        localStorage.setItem('name', result.user.displayName || '');
-        localStorage.setItem('role', 'visitante');
-        
+        localStorage.setItem('uid', res.uid);
+        localStorage.setItem('email', res.email);
+        localStorage.setItem('name', res.name || '');
+        localStorage.setItem('role', res.role || 'visitante');
+        localStorage.setItem('token', res.token || '');
+
         setMensaje({ texto: '¡Inicio con Google exitoso!', tipo: 'success' });
         setTimeout(() => {
           navigate('/dashboard');
