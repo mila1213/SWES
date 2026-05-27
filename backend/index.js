@@ -11,7 +11,18 @@ const API_KEY =
 
 const app = express();
 
-app.use(cors());
+// =======================================
+// CONFIGURACIÓN DE CORS ACTUALIZADA
+// =======================================
+app.use(cors({
+  origin: [
+    "https://swes-baaa7.web.app",
+    "https://swes-baaa7.firebaseapp.com",
+    "http://localhost:5173"
+  ],
+  credentials: true
+}));
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
@@ -111,8 +122,10 @@ const ensureAdminAccounts = async () => {
 
 // EJECUTAR CREACIÓN DE ADMINS
 ensureAdminAccounts();
+
+// RUTA RAÍZ PARA QUE RENDER DETECTE QUE ESTÁ VIVO
 app.get("/", (req, res) => {
-  res.send("API Firebase funcionando");
+  res.send("¡El backend de SWES está corriendo exitosamente!");
 });
 
 // REGISTRO
@@ -441,7 +454,6 @@ app.post("/api/google", async (req, res) => {
 });
 
 // PRODUCTOS
-
 const productCollection = db.collection('products');
 
 app.get('/api/products', async (req, res) => {
@@ -550,14 +562,14 @@ app.post('/api/contact', async (req, res) => {
 
     res.json({ mensaje: 'Mensaje enviado correctamente' });
   } catch (error) {
-    console.error('Error enviando mensaje de contacto:', error);
+    console.error('Error sending contact message:', error);
     res.status(500).json({ mensaje: 'Error al enviar mensaje' });
   }
 });
 
-// INICIAR SERVIDOR
+// INICIAR SERVIDOR CON EL PUERTO DINÁMICO REQUERIDO POR RENDER
 const PORT = process.env.PORT || 8000;
 
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo exitosamente en el puerto ${PORT}`);
 });
