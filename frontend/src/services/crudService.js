@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000/api';
+const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://swes-proyecto-web.onrender.com/api';
 
 export const getAll = async (resource) => {
   const res = await axios.get(`${BACKEND}/${resource}`);
