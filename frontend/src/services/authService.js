@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BACKEND = import.meta.env.VITE_BACKEND_URL || "https://swes-proyecto-web.onrender.com/api";
+const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://swes-proyecto-web.onrender.com/api';
 
 export const registerUser = async (userData) => {
   const response = await axios.post(`${BACKEND}/register`, userData);
